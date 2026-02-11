@@ -1,0 +1,108 @@
+/* krfiles custom Dokka theme */
+
+:root {
+    --color-primary: #6366f1;
+    --color-primary-dark: #4f46e5;
+    --color-accent: #22d3ee;
+    --color-background: #fafafa;
+    --color-surface: #ffffff;
+    --color-text: #1f2937;
+    --color-text-secondary: #6b7280;
+    --color-border: #e5e7eb;
+    --color-code-bg: #f3f4f6;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Header styling */
+.library-name a {
+    color: var(--color-primary) !important;
+    font-weight: 700;
+}
+
+/* Navigation */
+.navigation-wrapper {
+    border-right: 1px solid var(--color-border);
+}
+
+.sideMenu a {
+    transition: color 0.15s ease;
+}
+
+.sideMenu a:hover {
+    color: var(--color-primary);
+}
+
+/* Code blocks */
+code, .monospace {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+pre {
+    background: var(--color-code-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+/* Function signatures */
+.function .signature {
+    background: var(--color-code-bg);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--color-primary);
+}
+
+/* Tables */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+th, td {
+    border: 1px solid var(--color-border);
+    padding: 0.75rem;
+    text-align: left;
+}
+
+th {
+    background: var(--color-code-bg);
+    font-weight: 600;
+}
+
+/* Links */
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Badges / Tags */
+.platform-tag {
+    background: var(--color-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    border-top: 1px solid var(--color-border);
+    padding: 1rem;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navigation-wrapper {
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+}

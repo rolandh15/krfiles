@@ -1,0 +1,40 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Kotlin
+*.class
+
+# Node
+node_modules/
+yarn.lock
+yarn-error.log
+package-lock.json
+
+# Kotlin/JS
+kotlin-js-store/
+
+# Kotlin/Native
+.konan/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+*.exec
+*.ec
+
+# NPM pack output
+*.tgz
+
+# Example dependencies
+examples/node/node_modules/
