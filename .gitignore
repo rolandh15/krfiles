@@ -36,5 +36,8 @@ Thumbs.db
 # NPM pack output
 *.tgz
 
+# Rust
+cli/target/
+
 # Example dependencies
 examples/node/node_modules/

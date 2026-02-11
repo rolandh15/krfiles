@@ -62,7 +62,7 @@ kotlin {
 
         compilations["main"].packageJson {
             customField("description", "Kotlin Multiplatform client library for Filebrowser API")
-            customField("license", "MIT")
+            customField("license", "Apache-2.0")
             customField(
                 "repository",
                 mapOf(
@@ -150,7 +150,8 @@ kotlin {
         val nativeMain by creating {
             dependsOn(commonMain.get())
             dependencies {
-                implementation(libs.ktor.client.cio)
+                // Curl engine for Native — CIO doesn't support TLS on Native
+                implementation(libs.ktor.client.curl)
             }
         }
         val nativeTest by creating {
@@ -226,6 +227,14 @@ ktlint {
 
 val npmDistDir = layout.buildDirectory.dir("dist/js/productionLibrary")
 
+tasks.register<Copy>("copyNpmReadme") {
+    group = "publishing"
+    description = "Copy README.md into npm distribution directory"
+    from(rootProject.file("README.md"))
+    into(npmDistDir)
+    dependsOn("jsNodeProductionLibraryDistribution")
+}
+
 tasks.register("buildAll") {
     group = "build"
     description = "Build all distribution artifacts"
@@ -235,7 +244,7 @@ tasks.register("buildAll") {
 tasks.register<Exec>("npmPack") {
     group = "publishing"
     description = "Pack npm package into .tgz"
-    dependsOn("jsNodeProductionLibraryDistribution")
+    dependsOn("copyNpmReadme")
     workingDir(npmDistDir)
     commandLine("npm", "pack")
 }
@@ -243,7 +252,7 @@ tasks.register<Exec>("npmPack") {
 tasks.register<Exec>("npmPublish") {
     group = "publishing"
     description = "Publish npm package to registry"
-    dependsOn("jsNodeProductionLibraryDistribution")
+    dependsOn("copyNpmReadme")
     workingDir(npmDistDir)
     commandLine("npm", "publish", "--access", "public")
 }
@@ -275,8 +284,8 @@ publishing {
                 url.set("https://github.com/rolandh15/krfiles")
                 licenses {
                     license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
+                        name.set("Apache License 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
                     }
                 }
                 developers {

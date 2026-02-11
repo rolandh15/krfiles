@@ -1,0 +1,23 @@
+[package]
+name = "krfiles"
+version = "0.1.0"
+edition = "2024"
+description = "Filebrowser CLI powered by Kotlin Multiplatform via native FFI"
+license = "Apache-2.0"
+repository = "https://github.com/rolandh15/krfiles"
+homepage = "https://rolandh.link"
+keywords = ["filebrowser", "ffi", "kotlin-native", "cli"]
+categories = ["command-line-utilities", "filesystem"]
+readme = "../README.md"
+rust-version = "1.85"
+
+[dependencies]
+clap = { version = "4.5.58", features = ["derive", "env"] }
+colored = "3.1.1"
+rpassword = "7.4.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+tokio = { version = "1.49.0", features = ["full"] }
+
+[build-dependencies]
+cc = "1.2.55"
