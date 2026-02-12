@@ -89,8 +89,14 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Install libcurl (for Kotlin/Native Curl engine)
+        run: sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Run unit tests with coverage instrumentation
+        run: ./gradlew unitTest
+
       - name: Generate coverage report
-        run: ./gradlew koverHtmlReport koverXmlReport
+        run: ./gradlew koverHtmlReport koverXmlReport -x jvmIntegrationTest
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
