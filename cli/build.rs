@@ -56,21 +56,23 @@ fn main() {
     // On Linux this finds libkrfiles.so, on macOS libkrfiles.dylib.
     println!(
         "cargo:rustc-link-search=native={}",
-        krfiles_lib_dir.canonicalize().unwrap_or_else(|e| {
-            let task_suffix = kotlin_target
-                .chars()
-                .next()
-                .unwrap()
-                .to_uppercase()
-                .collect::<String>()
-                + &kotlin_target[1..];
-            panic!(
-                "Cannot find Kotlin native library at {}: {e}\n\
+        krfiles_lib_dir
+            .canonicalize()
+            .unwrap_or_else(|e| {
+                let task_suffix = kotlin_target
+                    .chars()
+                    .next()
+                    .unwrap()
+                    .to_uppercase()
+                    .collect::<String>()
+                    + &kotlin_target[1..];
+                panic!(
+                    "Cannot find Kotlin native library at {}: {e}\n\
                  Build it first: ./gradlew linkKrfilesReleaseShared{task_suffix}",
-                krfiles_lib_dir.display()
-            )
-        })
-        .display()
+                    krfiles_lib_dir.display()
+                )
+            })
+            .display()
     );
     println!("cargo:rustc-link-lib=dylib=krfiles");
 
