@@ -10,6 +10,8 @@ plugins {
 group = "dev.rolandh.krfiles"
 version = rootProject.file("VERSION").readText().trim()
 
+base.archivesName.set("krfiles")
+
 repositories {
     mavenCentral()
 }
@@ -61,8 +63,10 @@ kotlin {
         generateTypeScriptDefinitions()
 
         compilations["main"].packageJson {
+            customField("name", "@rolandh15/krfiles")
             customField("description", "Kotlin Multiplatform client library for Filebrowser API")
             customField("license", "Apache-2.0")
+            customField("publishConfig", mapOf("registry" to "https://npm.pkg.github.com"))
             customField(
                 "repository",
                 mapOf(
@@ -272,10 +276,10 @@ tasks.register<Exec>("npmPack") {
 
 tasks.register<Exec>("npmPublish") {
     group = "publishing"
-    description = "Publish npm package to registry"
+    description = "Publish npm package to GitHub Packages registry"
     dependsOn("copyNpmReadme")
     workingDir(npmDistDir)
-    commandLine("npm", "publish", "--access", "public")
+    commandLine("npm", "publish", "--registry", "https://npm.pkg.github.com", "--access", "public")
 }
 
 tasks.register("unitTest") {
@@ -297,6 +301,16 @@ tasks.register("check-all") {
 }
 
 publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/rolandh15/krfiles")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: ""
+                password = System.getenv("GITHUB_TOKEN") ?: ""
+            }
+        }
+    }
     publications {
         withType<MavenPublication> {
             pom {

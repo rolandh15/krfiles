@@ -13,7 +13,19 @@ krfiles provides a type-safe, coroutine-based API to interact with Filebrowser s
 
 ### Gradle (Kotlin DSL)
 
+Add the GitHub Packages repository and dependency:
+
 ```kotlin
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/rolandh15/krfiles")
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+
 dependencies {
     implementation("dev.rolandh.krfiles:krfiles:0.1.0")
 }
@@ -22,7 +34,8 @@ dependencies {
 ### npm
 
 ```bash
-npm install krfiles
+echo "@rolandh15:registry=https://npm.pkg.github.com" >> .npmrc
+npm install @rolandh15/krfiles
 ```
 
 ## Quick Start

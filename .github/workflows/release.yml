@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   validate:
@@ -170,8 +171,8 @@ jobs:
           name: krfiles-cli-${{ matrix.target }}
           path: krfiles-cli-${{ matrix.target }}.tar.gz
 
-  build-jvm-js:
-    name: Build JVM + JS
+  publish:
+    name: Publish Packages
     needs: validate
     runs-on: ubuntu-latest
     steps:
@@ -185,6 +186,19 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Publish to GitHub Packages (Maven)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: ./gradlew publishAllPublicationsToGitHubPackagesRepository
+
+      - name: Publish to GitHub Packages (npm)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          ./gradlew npmPublish
 
       - name: Build JVM jar
         run: ./gradlew jvmJar
@@ -206,7 +220,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: [validate, build-native, build-cli, build-jvm-js]
+    needs: [validate, build-native, build-cli, publish]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
