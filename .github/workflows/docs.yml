@@ -50,7 +50,10 @@ jobs:
           mkdir -p _site/kotlin _site/rust
           cp docs/index.html _site/
           cp -r lib/build/dokka/html/* _site/kotlin/
-          cp -r cli/target/doc/* _site/rust/
+          cp -r cli/target/doc/krfiles/* _site/rust/
+          # Copy shared static assets cargo doc puts at the root level
+          cp -r cli/target/doc/static.files _site/rust/ 2>/dev/null || true
+          cp -r cli/target/doc/src _site/rust/ 2>/dev/null || true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

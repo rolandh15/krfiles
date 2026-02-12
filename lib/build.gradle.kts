@@ -197,6 +197,7 @@ tasks.matching { it.name.contains("linuxX64Test") || it.name.contains("linuxArm6
 
 // Dokka configuration for beautiful documentation
 dokka {
+    moduleName.set("krfiles")
     dokkaSourceSets.configureEach {
         includes.from("MODULE.md")
         sourceLink {
