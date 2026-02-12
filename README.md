@@ -45,11 +45,12 @@ client.close()
 ### TypeScript / Node.js
 
 ```bash
-npm install krfiles
+echo "@rolandh15:registry=https://npm.pkg.github.com" >> .npmrc
+npm install @rolandh15/krfiles
 ```
 
 ```typescript
-import krfiles from "krfiles";
+import krfiles from "@rolandh15/krfiles";
 const { JsFilebrowserClient } = krfiles.dev.rolandh.krfiles;
 
 const client = new JsFilebrowserClient("https://files.example.com");
