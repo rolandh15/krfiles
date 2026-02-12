@@ -51,6 +51,7 @@ jobs:
           cp docs/index.html _site/
           cp -r lib/build/dokka/html/* _site/kotlin/
           cp -r cli/target/doc _site/rust
+          echo '<meta http-equiv="refresh" content="0;url=krfiles/">' > _site/rust/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
