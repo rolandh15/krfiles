@@ -157,7 +157,7 @@ jobs:
           fi
           mkdir -p staging
           cp "$CLI_BIN" staging/
-          cp "$SHARED_LIB_DIR"/libkrfiles.* staging/
+          find "$SHARED_LIB_DIR" -maxdepth 1 -type f -name "libkrfiles.*" -exec cp {} staging/ \;
           tar czf krfiles-cli-${{ matrix.target }}.tar.gz -C staging .
 
       - name: Upload artifact

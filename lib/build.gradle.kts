@@ -149,22 +149,34 @@ kotlin {
 
         val nativeMain by creating {
             dependsOn(commonMain.get())
-            dependencies {
-                // Curl engine for Native — CIO doesn't support TLS on Native
-                implementation(libs.ktor.client.curl)
-            }
         }
         val nativeTest by creating {
             dependsOn(commonTest.get())
         }
 
-        linuxX64Main { dependsOn(nativeMain) }
-        linuxArm64Main { dependsOn(nativeMain) }
-        macosX64Main { dependsOn(nativeMain) }
-        macosArm64Main { dependsOn(nativeMain) }
-        iosX64Main { dependsOn(nativeMain) }
-        iosArm64Main { dependsOn(nativeMain) }
-        iosSimulatorArm64Main { dependsOn(nativeMain) }
+        // Desktop native targets use Curl engine (CIO doesn't support TLS on Native)
+        val desktopNativeMain by creating {
+            dependsOn(nativeMain)
+            dependencies {
+                implementation(libs.ktor.client.curl)
+            }
+        }
+
+        // iOS targets use Darwin (URLSession) engine
+        val iosNativeMain by creating {
+            dependsOn(nativeMain)
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+            }
+        }
+
+        linuxX64Main { dependsOn(desktopNativeMain) }
+        linuxArm64Main { dependsOn(desktopNativeMain) }
+        macosX64Main { dependsOn(desktopNativeMain) }
+        macosArm64Main { dependsOn(desktopNativeMain) }
+        iosX64Main { dependsOn(iosNativeMain) }
+        iosArm64Main { dependsOn(iosNativeMain) }
+        iosSimulatorArm64Main { dependsOn(iosNativeMain) }
 
         linuxX64Test { dependsOn(nativeTest) }
         linuxArm64Test { dependsOn(nativeTest) }

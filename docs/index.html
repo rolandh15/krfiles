@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>krfiles API Documentation</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --link: #58a6ff;
+      --kotlin: #7F52FF;
+      --rust: #DEA584;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin-bottom: 3rem;
+    }
+    .cards {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    a.card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem 2.5rem;
+      width: 300px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    a.card:hover {
+      transform: translateY(-2px);
+    }
+    a.card.kotlin { border-color: var(--kotlin); }
+    a.card.rust { border-color: var(--rust); }
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .card.kotlin .card-title { color: var(--kotlin); }
+    .card.rust .card-title { color: var(--rust); }
+    .card-desc {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    footer {
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--link); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>krfiles</h1>
+  <p class="subtitle">Kotlin Multiplatform client library for Filebrowser</p>
+  <div class="cards">
+    <a href="kotlin/" class="card kotlin">
+      <div class="card-title">Kotlin API</div>
+      <div class="card-desc">
+        FilebrowserClient, data models, and platform-specific engines.
+        Covers JVM, JS, Native, and iOS targets.
+      </div>
+    </a>
+    <a href="rust/" class="card rust">
+      <div class="card-title">Rust CLI</div>
+      <div class="card-desc">
+        FFI bindings, CLI argument parsing, and data models
+        for the Rust command-line interface.
+      </div>
+    </a>
+  </div>
+  <footer>
+    <a href="https://github.com/rolandh15/krfiles">GitHub</a>
+  </footer>
+</body>
+</html>

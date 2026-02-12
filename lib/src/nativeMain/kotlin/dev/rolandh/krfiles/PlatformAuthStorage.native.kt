@@ -14,7 +14,6 @@ import platform.posix.fgets
 import platform.posix.fopen
 import platform.posix.fputs
 import platform.posix.getenv
-import platform.posix.mkdir
 import platform.posix.remove
 
 /**
@@ -42,7 +41,7 @@ internal class NativeAuthStorage : AuthStorage {
     }
 
     private fun ensureConfigDir() {
-        mkdir(configDir, 493u) // 0755
+        ensureDirExists(configDir)
     }
 
     private fun readData(): NativeAuthData =

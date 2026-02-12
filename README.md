@@ -1,4 +1,5 @@
 [![CI](https://github.com/rolandh15/krfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/rolandh15/krfiles/actions/workflows/ci.yml)
+[![Docs](https://github.com/rolandh15/krfiles/actions/workflows/docs.yml/badge.svg)](https://rolandh15.github.io/krfiles/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.10-7F52FF.svg)](https://kotlinlang.org)
 [![Rust](https://img.shields.io/badge/Rust-2024_edition-DEA584.svg)](https://www.rust-lang.org)
@@ -94,77 +95,41 @@ krfiles search "*.pdf" /documents
 ## Architecture
 
 ```
-                          commonMain (Kotlin)
-                   FilebrowserClient, Models, Auth
-                    /           |            \
-                   /            |             \
-            jvmMain         jsMain         nativeMain
-           (CIO engine)  (JS engine)     (Curl engine)
-              |              |                |
-              v              v                v
-           .jar           npm pkg        .so / .dylib
-         (Maven)        (TypeScript       (C header)
-                        definitions)         |
-                                             v
-                                    krfiles_shim.c
-                                  (flattens vtable)
-                                             |
-                                             v
-                                      ffi.rs (safe Rust)
-                                             |
-                                             v
-                                     main.rs (clap CLI)
+                      commonMain (Kotlin)
+               FilebrowserClient, Models, Auth
+                /           |            \
+               /            |             \
+        jvmMain         jsMain         nativeMain
+       (CIO engine)  (JS engine)          |
+          |              |          +-----------+
+          v              v          |           |
+       .jar           npm pkg  desktopNativeMain  iosNativeMain
+     (Maven)        (TypeScript  (Curl engine)   (Darwin engine)
+                    definitions)     |
+                                    v
+                              .so / .dylib
+                               (C header)
+                                    |
+                                    v
+                           krfiles_shim.c
+                         (flattens vtable)
+                                    |
+                                    v
+                             ffi.rs (safe Rust)
+                                    |
+                                    v
+                            main.rs (clap CLI)
 ```
 
-## Kotlin/Native C Interop: Design Decisions
+## Kotlin/Native C Interop
 
-This project solves three real limitations of Kotlin/Native's C interop. If you're building cross-language FFI with Kotlin/Native, these patterns may be useful.
+The Rust CLI consumes the Kotlin library via C FFI, working around three Kotlin/Native limitations:
 
-### 1. No suspend function export
+1. **No suspend export** - Wrapper functions use `runBlocking`; Rust calls them via `spawn_blocking`
+2. **Opaque pointers** - Complex types are serialized as JSON across the FFI boundary
+3. **Vtable nesting** - A C shim ([`krfiles_shim.c`](cli/native/krfiles_shim.c)) flattens the deeply nested symbol table into simple function names
 
-Kotlin `suspend` functions simply don't appear in the generated C header. They can't be called from C, Rust, or any other FFI consumer.
-
-**Workaround:** Top-level wrapper functions in `nativeMain` that call suspend functions via `runBlocking`:
-
-```kotlin
-// This appears in the C header; the suspend client.login() does not
-fun nativeLogin(username: String, password: String): String? =
-    runBlocking {
-        client.login(username, password).fold(
-            onSuccess = { token -> token },
-            onFailure = { e -> lastError = e.message; null }
-        )
-    }
-```
-
-The Rust CLI compensates for the blocking nature by calling these functions from `tokio::task::spawn_blocking`, keeping the async runtime free.
-
-### 2. Opaque pointers, not C structs
-
-Kotlin objects are exposed as `void*` handles, not real C structs with accessible fields. To read a single field, you call a getter through the vtable:
-
-```c
-const char* name = symbols->kotlin.root...Resource.get_name(handle);
-double size      = symbols->kotlin.root...Resource.get_size(handle);
-```
-
-For a directory with N files, accessing all fields requires O(N x fields) FFI calls plus vtable-based List iteration.
-
-**Workaround:** Serialize complex return types to **JSON strings** across the FFI boundary. One FFI call returns all data, and the consumer deserializes natively (serde in Rust, `encoding/json` in Go, cJSON in C). React Native used a similar JSON bridge for years.
-
-### 3. Vtable access pattern
-
-All exported symbols live in a deeply nested struct:
-```c
-libkrfiles_symbols()->kotlin.root.dev.rolandh.krfiles.nativeLogin(...)
-```
-
-**Workaround:** A thin C shim ([`cli/native/krfiles_shim.c`](cli/native/krfiles_shim.c)) includes the Kotlin header and provides flat function names:
-```c
-const char* krfiles_login(const char* u, const char* p) {
-    return KR.nativeLogin(u, p);
-}
-```
+See the [full API documentation](https://rolandh15.github.io/krfiles/) for detailed design decisions and code examples.
 
 ## Building from Source
 

@@ -1,0 +1,68 @@
+name: Docs
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install libcurl
+        run: sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Generate Dokka HTML
+        run: ./gradlew dokkaGenerate
+
+      - name: Generate cargo doc
+        working-directory: cli
+        env:
+          DOCS_RS: "1"
+        run: cargo doc --no-deps
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/kotlin _site/rust
+          cp docs/index.html _site/
+          cp -r lib/build/dokka/html/* _site/kotlin/
+          cp -r cli/target/doc/* _site/rust/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

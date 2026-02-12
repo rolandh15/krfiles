@@ -72,15 +72,97 @@ suspend fun main() {
 
 ## Targets
 
-| Target | Output | Use Case |
-|--------|--------|----------|
-| JVM | JAR | Android, Spring Boot, Desktop |
-| JS | npm package | React, Vue, Node.js |
-| Native | .so/.dylib | iOS, macOS, Rust CLI |
+| Target | Output | HTTP Engine | Use Case |
+|--------|--------|-------------|----------|
+| JVM | `.jar` (Maven) | Ktor CIO | Android, Spring, server-side JVM |
+| JS/Node | npm package | Ktor JS (fetch) | Node.js scripts, TypeScript projects |
+| Native (desktop) | `.so` / `.dylib` | Ktor Curl | C, Rust, Go, or any FFI consumer |
+| Native (iOS) | Framework | Ktor Darwin | iOS / iPadOS apps |
+
+## Architecture
+
+```
+                      commonMain (Kotlin)
+               FilebrowserClient, Models, Auth
+                /           |            \
+               /            |             \
+        jvmMain         jsMain         nativeMain
+       (CIO engine)  (JS engine)          |
+          |              |          +-----------+
+          v              v          |           |
+       .jar           npm pkg  desktopNativeMain  iosNativeMain
+     (Maven)        (TypeScript  (Curl engine)   (Darwin engine)
+                    definitions)     |
+                                    v
+                              .so / .dylib
+                               (C header)
+                                    |
+                                    v
+                           krfiles_shim.c
+                         (flattens vtable)
+                                    |
+                                    v
+                             ffi.rs (safe Rust)
+                                    |
+                                    v
+                            main.rs (clap CLI)
+```
+
+## Kotlin/Native C Interop: Design Decisions
+
+This project solves three real limitations of Kotlin/Native's C interop. If you're building cross-language FFI with Kotlin/Native, these patterns may be useful.
+
+### 1. No suspend function export
+
+Kotlin `suspend` functions simply don't appear in the generated C header. They can't be called from C, Rust, or any other FFI consumer.
+
+**Workaround:** Top-level wrapper functions in `nativeMain` that call suspend functions via `runBlocking`:
+
+```kotlin
+// This appears in the C header; the suspend client.login() does not
+fun nativeLogin(username: String, password: String): String? =
+    runBlocking {
+        client.login(username, password).fold(
+            onSuccess = { token -> token },
+            onFailure = { e -> lastError = e.message; null }
+        )
+    }
+```
+
+The Rust CLI compensates for the blocking nature by calling these functions from `tokio::task::spawn_blocking`, keeping the async runtime free.
+
+### 2. Opaque pointers, not C structs
+
+Kotlin objects are exposed as `void*` handles, not real C structs with accessible fields. To read a single field, you call a getter through the vtable:
+
+```c
+const char* name = symbols->kotlin.root...Resource.get_name(handle);
+double size      = symbols->kotlin.root...Resource.get_size(handle);
+```
+
+For a directory with N files, accessing all fields requires O(N x fields) FFI calls plus vtable-based List iteration.
+
+**Workaround:** Serialize complex return types to **JSON strings** across the FFI boundary. One FFI call returns all data, and the consumer deserializes natively (serde in Rust, `encoding/json` in Go, cJSON in C). React Native used a similar JSON bridge for years.
+
+### 3. Vtable access pattern
+
+All exported symbols live in a deeply nested struct:
+```c
+libkrfiles_symbols()->kotlin.root.dev.rolandh.krfiles.nativeLogin(...)
+```
+
+**Workaround:** A thin C shim ([`cli/native/krfiles_shim.c`](https://github.com/rolandh15/krfiles/blob/master/cli/native/krfiles_shim.c)) includes the Kotlin header and provides flat function names:
+```c
+const char* krfiles_login(const char* u, const char* p) {
+    return KR.nativeLogin(u, p);
+}
+```
+
+The Rust side then declares these as simple `extern "C"` functions and wraps them with safe Rust APIs in the `ffi` module.
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/rolandh15/krfiles/blob/master/LICENSE)
+Apache License 2.0 - see [LICENSE](https://github.com/rolandh15/krfiles/blob/master/LICENSE)
 
 # Package dev.rolandh.krfiles
 

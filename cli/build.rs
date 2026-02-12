@@ -7,6 +7,11 @@
 /// The Kotlin/Native target is auto-detected from the Rust build target.
 /// Override with `KRFILES_NATIVE_LIB_DIR` env var if needed.
 fn main() {
+    // Skip native compilation when building docs (cargo doc / docs.rs)
+    if std::env::var("DOCS_RS").is_ok() {
+        return;
+    }
+
     let native_dir = std::path::Path::new("native");
 
     // Detect the Kotlin/Native target directory from Rust's build target.
