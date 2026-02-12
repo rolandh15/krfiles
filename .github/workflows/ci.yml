@@ -10,6 +10,21 @@ permissions:
   contents: read
 
 jobs:
+  check-versions:
+    name: Check Version Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check VERSION matches Cargo.toml
+        run: |
+          VERSION=$(cat VERSION)
+          CARGO_VERSION=$(grep '^version' cli/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ "$VERSION" != "$CARGO_VERSION" ]; then
+            echo "::error::VERSION file ($VERSION) does not match cli/Cargo.toml ($CARGO_VERSION)"
+            exit 1
+          fi
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -104,10 +119,29 @@ jobs:
           name: coverage-report
           path: lib/build/reports/kover/
 
-  build:
-    name: Build Artifacts
-    runs-on: ubuntu-latest
+  build-native:
+    name: Native Library (${{ matrix.target }})
     needs: [test, lint]
+    strategy:
+      matrix:
+        include:
+          - target: linux-x64
+            os: ubuntu-latest
+            gradle-task: linkKrfilesReleaseSharedLinuxX64
+            artifact-path: lib/build/bin/linuxX64/krfilesReleaseShared/
+          - target: linux-arm64
+            os: ubuntu-latest
+            gradle-task: linkKrfilesReleaseSharedLinuxArm64
+            artifact-path: lib/build/bin/linuxArm64/krfilesReleaseShared/
+          - target: macos-x64
+            os: macos-latest
+            gradle-task: linkKrfilesReleaseSharedMacosX64
+            artifact-path: lib/build/bin/macosX64/krfilesReleaseShared/
+          - target: macos-arm64
+            os: macos-latest
+            gradle-task: linkKrfilesReleaseSharedMacosArm64
+            artifact-path: lib/build/bin/macosArm64/krfilesReleaseShared/
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -120,11 +154,37 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Install libcurl (for Kotlin/Native Curl engine)
+      - name: Install libcurl (Linux)
+        if: runner.os == 'Linux'
         run: sudo apt-get install -y libcurl4-openssl-dev
 
-      - name: Build all artifacts
-        run: ./gradlew buildAll
+      - name: Build native shared library
+        run: ./gradlew ${{ matrix.gradle-task }}
+
+      - name: Upload native shared library
+        uses: actions/upload-artifact@v4
+        with:
+          name: krfiles-native-${{ matrix.target }}
+          path: ${{ matrix.artifact-path }}
+
+  build-jvm-js:
+    name: Build JVM + JS
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build JVM jar
+        run: ./gradlew jvmJar
 
       - name: Pack npm package
         run: ./gradlew npmPack
@@ -141,16 +201,28 @@ jobs:
           name: krfiles-npm
           path: lib/build/dist/js/productionLibrary/*.tgz
 
-      - name: Upload native shared library
-        uses: actions/upload-artifact@v4
-        with:
-          name: krfiles-native-linux-x64
-          path: lib/build/bin/linuxX64/krfilesReleaseShared/
-
   rust-build:
-    name: Rust Build
-    runs-on: ubuntu-latest
+    name: Rust Build (${{ matrix.target }})
     needs: [test, lint]
+    strategy:
+      matrix:
+        include:
+          - target: linux-x64
+            os: ubuntu-latest
+            gradle-task: linkKrfilesReleaseSharedLinuxX64
+            kotlin-target: linuxX64
+            cargo-target: ''
+          - target: macos-arm64
+            os: macos-latest
+            gradle-task: linkKrfilesReleaseSharedMacosArm64
+            kotlin-target: macosArm64
+            cargo-target: ''
+          - target: macos-x64
+            os: macos-latest
+            gradle-task: linkKrfilesReleaseSharedMacosX64
+            kotlin-target: macosX64
+            cargo-target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -168,25 +240,30 @@ jobs:
         with:
           components: clippy
 
-      - name: Install libcurl (for Kotlin/Native Curl engine)
+      - name: Install libcurl (Linux)
+        if: runner.os == 'Linux'
         run: sudo apt-get install -y libcurl4-openssl-dev
 
+      - name: Add Rust cross-compilation target
+        if: matrix.cargo-target != ''
+        run: rustup target add ${{ matrix.cargo-target }}
+
       - name: Build Kotlin native shared library
-        run: ./gradlew linkKrfilesReleaseSharedLinuxX64
+        run: ./gradlew ${{ matrix.gradle-task }}
 
       - name: Copy C header to CLI
-        run: cp lib/build/bin/linuxX64/krfilesReleaseShared/libkrfiles_api.h cli/native/
+        run: cp lib/build/bin/${{ matrix.kotlin-target }}/krfilesReleaseShared/libkrfiles_api.h cli/native/
 
       - name: Run clippy
         working-directory: cli
-        run: cargo clippy -- -D warnings
+        run: cargo clippy ${{ matrix.cargo-target != '' && format('--target {0}', matrix.cargo-target) || '' }} -- -D warnings
 
       - name: Build Rust CLI
         working-directory: cli
-        run: cargo build --release
+        run: cargo build --release ${{ matrix.cargo-target != '' && format('--target {0}', matrix.cargo-target) || '' }}
 
       - name: Upload Rust CLI
         uses: actions/upload-artifact@v4
         with:
-          name: krfiles-cli-linux-x64
-          path: cli/target/release/krfiles
+          name: krfiles-cli-${{ matrix.target }}
+          path: cli/target/${{ matrix.cargo-target != '' && format('{0}/release/krfiles', matrix.cargo-target) || 'release/krfiles' }}

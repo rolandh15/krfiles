@@ -1,6 +1,6 @@
 [package]
 name = "krfiles"
-version = "0.1.0"
+version = "0.1.0" # keep in sync with /VERSION
 edition = "2024"
 description = "Filebrowser CLI powered by Kotlin Multiplatform via native FFI"
 license = "Apache-2.0"

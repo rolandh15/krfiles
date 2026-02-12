@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.rolandh.krfiles"
-version = "0.1.0"
+version = rootProject.file("VERSION").readText().trim()
 
 repositories {
     mavenCentral()
@@ -237,8 +237,16 @@ tasks.register<Copy>("copyNpmReadme") {
 
 tasks.register("buildAll") {
     group = "build"
-    description = "Build all distribution artifacts"
-    dependsOn("jvmJar", "jsNodeProductionLibraryDistribution", "linuxX64Binaries")
+    description = "Build all distribution artifacts for the current platform"
+    dependsOn("jvmJar", "jsNodeProductionLibraryDistribution")
+
+    // Native shared libs can only be built on the matching host OS
+    val os = System.getProperty("os.name").lowercase()
+    if (os.contains("linux")) {
+        dependsOn("linkKrfilesReleaseSharedLinuxX64", "linkKrfilesReleaseSharedLinuxArm64")
+    } else if (os.contains("mac")) {
+        dependsOn("linkKrfilesReleaseSharedMacosX64", "linkKrfilesReleaseSharedMacosArm64")
+    }
 }
 
 tasks.register<Exec>("npmPack") {
