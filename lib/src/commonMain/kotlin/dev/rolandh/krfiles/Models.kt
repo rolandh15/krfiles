@@ -151,6 +151,54 @@ internal data class ActionRequest(
 )
 
 /**
+ * A shareable link returned by Filebrowser's `POST /api/share/<path>` endpoint.
+ *
+ * The fields mirror `share.Link` in the Filebrowser backend. The public share
+ * URL is constructed by the caller as `"$baseUrl/share/$hash"` — for
+ * password-protected shares, append `?token=$token`.
+ *
+ * @property hash Randomly generated short identifier used in the share URL.
+ * @property path Server-side path the share points at (what was shared).
+ * @property userID ID of the user who created the share.
+ * @property expire Expiry as a Unix epoch in seconds. `0` means no expiry.
+ *   Typed as [Double] (not [Long]) to stay compatible with the JS target's
+ *   `@JsExport` rules — for timestamps up to year 287396 this is lossless.
+ * @property passwordHash bcrypt hash of the share password, empty if unset.
+ * @property token Secondary token required to download password-protected
+ *   shares via query arg. Empty when no password is set.
+ */
+@JsExport
+@Serializable
+public data class Share(
+    val hash: String = "",
+    val path: String = "",
+    val userID: Int = 0,
+    val expire: Double = 0.0,
+    @kotlinx.serialization.SerialName("password_hash")
+    val passwordHash: String = "",
+    val token: String = "",
+)
+
+/**
+ * Request body for `POST /api/share/<path>`.
+ *
+ * Mirrors Filebrowser's `share.CreateBody`. All fields are optional; an empty
+ * body creates a permanent, unprotected share link.
+ *
+ * @property password Optional password. When set, Filebrowser hashes it with
+ *   bcrypt and also generates a [Share.token] for query-arg access.
+ * @property expires Duration amount as a string (Filebrowser parses it with
+ *   strconv.Atoi). Empty means "no expiry".
+ * @property unit One of "seconds", "minutes", "hours" (default), "days".
+ */
+@Serializable
+internal data class ShareCreateRequest(
+    val password: String = "",
+    val expires: String = "",
+    val unit: String = "hours",
+)
+
+/**
  * Error returned by Filebrowser API.
  */
 @JsExport

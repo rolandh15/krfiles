@@ -97,6 +97,19 @@ const char* krfiles_search(const char* query, const char* path) {
     return KR.nativeSearch(query, path);
 }
 
+/* --- Sharing --- */
+
+/* Create a share link for `path`. Returns the created Share object as JSON,
+ * or NULL on failure (use krfiles_get_last_error to inspect). `password`,
+ * `expires` and `unit` are forwarded as-is; pass empty strings (not NULL) to
+ * create a permanent, unprotected share and let the Kotlin client apply its
+ * defaults. Caller owns the returned pointer and must release it via
+ * krfiles_free_string. */
+const char* krfiles_create_share(const char* path, const char* password, const char* expires, const char* unit) {
+    ensure_init();
+    return KR.nativeCreateShare(path, password, expires, unit);
+}
+
 /* --- File operations --- */
 
 bool krfiles_download_to_file(const char* remote_path, const char* local_path) {

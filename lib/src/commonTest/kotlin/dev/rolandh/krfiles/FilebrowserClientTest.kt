@@ -357,6 +357,91 @@ class FilebrowserClientTest {
             client.close()
         }
 
+    // --- Share Tests ---
+
+    @Test
+    fun testCreateShareSuccess() =
+        runTest {
+            val client =
+                authenticatedClient { path, method, _, _ ->
+                    assertEquals(HttpMethod.Post, method)
+                    assertEquals("/api/share/reports/q4.pdf", path)
+                    Pair(
+                        """{"hash":"abc123","path":"/reports/q4.pdf","userID":1,"expire":0}""",
+                        HttpStatusCode.OK,
+                    )
+                }
+
+            client.login("admin", "password")
+            val result = client.createShare("/reports/q4.pdf")
+
+            assertTrue(result.isSuccess)
+            val share = result.getOrThrow()
+            assertEquals("abc123", share.hash)
+            assertEquals("/reports/q4.pdf", share.path)
+            assertEquals(1, share.userID)
+            assertEquals(0.0, share.expire)
+            assertEquals("", share.passwordHash)
+            assertEquals("", share.token)
+            client.close()
+        }
+
+    @Test
+    fun testCreateSharePasswordProtected() =
+        runTest {
+            val client =
+                authenticatedClient { _, method, _, _ ->
+                    assertEquals(HttpMethod.Post, method)
+                    Pair(
+                        """{
+                            "hash":"def456",
+                            "path":"/secret.txt",
+                            "userID":2,
+                            "expire":1800000000,
+                            "password_hash":"bcrypt-placeholder",
+                            "token":"Zm9vYmFy"
+                        }""",
+                        HttpStatusCode.OK,
+                    )
+                }
+
+            client.login("admin", "password")
+            val result =
+                client.createShare(
+                    path = "/secret.txt",
+                    password = "hunter2",
+                    expires = "24",
+                    unit = "hours",
+                )
+
+            assertTrue(result.isSuccess)
+            val share = result.getOrThrow()
+            assertEquals("def456", share.hash)
+            assertEquals(1800000000.0, share.expire)
+            assertEquals("bcrypt-placeholder", share.passwordHash)
+            assertEquals("Zm9vYmFy", share.token)
+            client.close()
+        }
+
+    @Test
+    fun testCreateShareForbidden() =
+        runTest {
+            val client =
+                authenticatedClient { _, _, _, _ ->
+                    Pair("forbidden", HttpStatusCode.Forbidden)
+                }
+
+            client.login("admin", "password")
+            val result = client.createShare("/secret.txt")
+
+            assertTrue(result.isFailure)
+            val error = result.exceptionOrNull()
+            assertNotNull(error)
+            assertTrue(error is FilebrowserException)
+            assertEquals(403, error.statusCode)
+            client.close()
+        }
+
     // --- Search Tests ---
 
     @Test
