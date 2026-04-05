@@ -42,6 +42,22 @@ const char* krfiles_get_last_error(void) {
     return KR.nativeGetLastError();
 }
 
+/* Free a string returned by any krfiles_* function that returns `const char*`.
+ *
+ * Kotlin/Native allocates a fresh C string for every such return value and
+ * hands ownership to the caller. Without calling this, each returned string
+ * stays resident for the process lifetime. Long-running FFI consumers (e.g.
+ * a Mattermost plugin) must call this on every non-NULL return; short-lived
+ * CLI processes can skip it and rely on process exit to reclaim memory.
+ *
+ * Passing NULL is safe and does nothing. Passing a pointer that did not
+ * originate from a krfiles_* call is undefined behaviour. */
+void krfiles_free_string(const char* s) {
+    if (s == NULL) return;
+    ensure_init();
+    sym->DisposeString(s);
+}
+
 /* --- Auth --- */
 
 const char* krfiles_login(const char* username, const char* password) {
