@@ -367,6 +367,47 @@ public class FilebrowserClient(
         }
 
     /**
+     * Create a share link for a file or directory.
+     *
+     * Calls Filebrowser's `POST /api/share/<path>` endpoint. The user must
+     * have both the `share` and `download` permissions; otherwise the server
+     * returns 403.
+     *
+     * @param path Absolute path to share (e.g. "/reports/q4.pdf").
+     * @param password Optional password. When non-empty, Filebrowser stores
+     *   a bcrypt hash and also returns a [Share.token] that must be passed
+     *   as a query arg when downloading the password-protected share.
+     * @param expires Optional expiry duration as a numeric string (e.g. "24").
+     *   Combined with [unit] it sets [Share.expire] to `now + amount`. An
+     *   empty string creates a permanent share.
+     * @param unit Unit for [expires]. One of "seconds", "minutes", "hours"
+     *   (default), "days". Ignored when [expires] is empty.
+     * @return [Result] containing the created [Share] on success.
+     */
+    public suspend fun createShare(
+        path: String,
+        password: String = "",
+        expires: String = "",
+        unit: String = "hours",
+    ): Result<Share> =
+        runCatching {
+            requireAuth()
+            val encodedPath = path.encodeURLPath()
+            val response =
+                client.post("$baseUrl/api/share$encodedPath") {
+                    authHeader()
+                    contentType(ContentType.Application.Json)
+                    setBody(ShareCreateRequest(password = password, expires = expires, unit = unit))
+                }
+
+            if (!response.status.isSuccess()) {
+                throw FilebrowserException(response.status.value, response.bodyAsText())
+            }
+
+            response.body<Share>()
+        }
+
+    /**
      * List all users (admin only).
      *
      * @return Result containing list of users

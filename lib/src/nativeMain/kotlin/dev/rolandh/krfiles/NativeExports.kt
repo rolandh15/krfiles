@@ -186,6 +186,36 @@ public fun nativeSearch(
         )
     }
 
+// --- Sharing ---
+
+/**
+ * Create a share link for [path]. Returns the created [Share] as JSON, or
+ * null on failure (check [nativeGetLastError] for details).
+ *
+ * [password], [expires] and [unit] map directly to [FilebrowserClient.createShare].
+ * Pass empty strings to create a permanent, unprotected share — the Kotlin
+ * client applies its defaults when `expires` is empty.
+ */
+public fun nativeCreateShare(
+    path: String,
+    password: String,
+    expires: String,
+    unit: String,
+): String? =
+    runBlocking {
+        val client = requireClient() ?: return@runBlocking null
+        client.createShare(path, password, expires, unit).fold(
+            onSuccess = { share ->
+                lastError = null
+                exportJson.encodeToString(share)
+            },
+            onFailure = { e ->
+                lastError = e.message
+                null
+            },
+        )
+    }
+
 // --- File Operations ---
 
 /** Download a remote file and save to a local path. Returns true on success. */
