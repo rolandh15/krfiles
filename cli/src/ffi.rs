@@ -31,6 +31,7 @@ unsafe extern "C" {
     fn krfiles_create_client(base_url: *const c_char);
     fn krfiles_destroy_client();
     fn krfiles_get_last_error() -> *const c_char;
+    fn krfiles_free_string(s: *const c_char);
 
     fn krfiles_login(username: *const c_char, password: *const c_char) -> *const c_char;
     fn krfiles_set_token(token: *const c_char) -> bool;
@@ -85,7 +86,11 @@ pub fn last_error() -> String {
         } else {
             // CStr::from_ptr reads bytes until it hits a null terminator.
             // to_string_lossy handles any non-UTF8 bytes gracefully.
-            CStr::from_ptr(ptr).to_string_lossy().into_owned()
+            let owned = CStr::from_ptr(ptr).to_string_lossy().into_owned();
+            // The pointer is a fresh Kotlin/Native allocation — release it now
+            // that the bytes have been copied into a Rust-owned String.
+            krfiles_free_string(ptr);
+            owned
         }
     }
 }
@@ -183,14 +188,22 @@ pub fn copy(source: &str, dest: &str, overwrite: bool) -> Result<(), String> {
 // ---------------------------------------------------------------------------
 
 /// Convert a nullable C string to Result. Null means error → check last_error().
+///
+/// On success, the C string's bytes are copied into a Rust-owned `String`
+/// and the original Kotlin/Native allocation is released via
+/// `krfiles_free_string`. Without that release the bytes would leak for the
+/// lifetime of the process — tolerable for a short-lived CLI run, but not
+/// for long-running FFI consumers that share this crate's ffi module.
 unsafe fn nullable_str_to_result(ptr: *const c_char) -> Result<String, String> {
     if ptr.is_null() {
         Err(last_error())
     } else {
         // unsafe block required even inside unsafe fn (Rust 2024 edition)
-        Ok(unsafe { CStr::from_ptr(ptr) }
+        let owned = unsafe { CStr::from_ptr(ptr) }
             .to_string_lossy()
-            .into_owned())
+            .into_owned();
+        unsafe { krfiles_free_string(ptr) };
+        Ok(owned)
     }
 }
 
