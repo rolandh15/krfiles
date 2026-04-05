@@ -88,8 +88,18 @@ jobs:
       - name: Build native shared library
         run: ./gradlew ${{ matrix.gradle-task }}
 
+      - name: Stage archive contents
+        run: |
+          mkdir -p staging
+          cp -a ${{ matrix.artifact-path }}/. staging/
+          # Ship the C shim that flattens the Kotlin/Native vtable alongside
+          # the shared library and header, so FFI consumers (Rust CLI, Go cgo
+          # bindings, ...) don't have to vendor it separately from the source
+          # tree to build against a release artifact.
+          cp cli/native/krfiles_shim.c staging/
+
       - name: Create archive
-        run: tar czf krfiles-native-${{ matrix.target }}.tar.gz -C ${{ matrix.artifact-path }} .
+        run: tar czf krfiles-native-${{ matrix.target }}.tar.gz -C staging .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
