@@ -469,8 +469,8 @@ typedef struct {
                 libkrfiles_kref_kotlinx_serialization_KSerializer (*serializer)(libkrfiles_kref_dev_rolandh_krfiles_Share_Companion thiz);
               } Companion;
               libkrfiles_KType* (*_type)(void);
-              libkrfiles_kref_dev_rolandh_krfiles_Share (*Share)(const char* hash, const char* path, libkrfiles_KInt userID, libkrfiles_KLong expire, const char* passwordHash, const char* token);
-              libkrfiles_KLong (*get_expire)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
+              libkrfiles_kref_dev_rolandh_krfiles_Share (*Share)(const char* hash, const char* path, libkrfiles_KInt userID, libkrfiles_KDouble expire, const char* passwordHash, const char* token);
+              libkrfiles_KDouble (*get_expire)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*get_hash)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*get_passwordHash)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*get_path)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
@@ -479,10 +479,10 @@ typedef struct {
               const char* (*component1)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*component2)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               libkrfiles_KInt (*component3)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
-              libkrfiles_KLong (*component4)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
+              libkrfiles_KDouble (*component4)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*component5)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*component6)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
-              libkrfiles_kref_dev_rolandh_krfiles_Share (*copy)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz, const char* hash, const char* path, libkrfiles_KInt userID, libkrfiles_KLong expire, const char* passwordHash, const char* token);
+              libkrfiles_kref_dev_rolandh_krfiles_Share (*copy)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz, const char* hash, const char* path, libkrfiles_KInt userID, libkrfiles_KDouble expire, const char* passwordHash, const char* token);
               libkrfiles_KBoolean (*equals)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz, libkrfiles_kref_kotlin_Any other);
               libkrfiles_KInt (*hashCode)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);
               const char* (*toString)(libkrfiles_kref_dev_rolandh_krfiles_Share thiz);

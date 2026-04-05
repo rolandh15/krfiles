@@ -161,6 +161,8 @@ internal data class ActionRequest(
  * @property path Server-side path the share points at (what was shared).
  * @property userID ID of the user who created the share.
  * @property expire Expiry as a Unix epoch in seconds. `0` means no expiry.
+ *   Typed as [Double] (not [Long]) to stay compatible with the JS target's
+ *   `@JsExport` rules — for timestamps up to year 287396 this is lossless.
  * @property passwordHash bcrypt hash of the share password, empty if unset.
  * @property token Secondary token required to download password-protected
  *   shares via query arg. Empty when no password is set.
@@ -171,7 +173,7 @@ public data class Share(
     val hash: String = "",
     val path: String = "",
     val userID: Int = 0,
-    val expire: Long = 0,
+    val expire: Double = 0.0,
     @kotlinx.serialization.SerialName("password_hash")
     val passwordHash: String = "",
     val token: String = "",
